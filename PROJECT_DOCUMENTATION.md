@@ -42,21 +42,35 @@ Altar_Creation/
 │   │   └── index.html          # Main HTML file
 │   ├── src/
 │   │   ├── components/         # React components
-│   │   │   ├── AltarBuilder.jsx    # Main component (1000+ lines)
-│   │   │   ├── AltarCanvas.jsx     # Canvas area component
+│   │   │   ├── AltarBuilder.jsx    # Main component
 │   │   │   ├── ItemPalette.jsx     # Sidebar with items
-│   │   │   └── WelcomePage.jsx     # Landing page
+│   │   │   ├── DesignManager.jsx   # Modal for loading/saving designs
+│   │   │   ├── WelcomePage.jsx     # Landing page
+│   │   │   ├── Register.jsx        # Registration form
+│   │   │   └── Login.jsx           # Login form
+│   │   ├── services/
+│   │   │   └── designService.js    # API service for design operations
+│   │   ├── context/
+│   │   │   └── AuthContext.js      # Authentication context
 │   │   ├── App.js              # App entry point
 │   │   ├── index.js            # React entry point
 │   │   └── index.css           # Global styles
 │   └── package.json            # Dependencies
-└── backend/                    # Future backend (not used yet)
+└── backend/                    # Node.js backend
+    ├── src/
+    │   ├── models/
+    │   │   ├── Design.js
+    │   │   └── User.js
+    │   ├── routes/
+    │   │   ├── designs.js
+    │   │   └── auth.js
+    │   ├── middleware/
+    │   │   └── auth.js
+    │   └── index.js
+    └── package.json
 ```
 
-### How the App Works
-1. **Entry Point**: `index.js` → `App.js` → `WelcomePage.jsx`
-2. **Main App**: `WelcomePage.jsx` → `AltarBuilder.jsx`
-3. **Altar Builder**: Contains all the main logic and renders `ItemPalette.jsx` and `AltarCanvas.jsx`
+*All unnecessary files and unused models have been removed for a clean, maintainable codebase.*
 
 ---
 
@@ -180,23 +194,25 @@ const handlePhotoUpload = (e) => {
 
 ---
 
-### 4. AltarCanvas.jsx
-**Purpose**: The main canvas area where users build their altar
+### 4. DesignManager.jsx
+**Purpose**: Modal for loading and saving user altar designs
 
 **What it does**:
-- Displays the altar background
-- Shows the uploaded photo with frame
-- Renders all altar items
-- Handles drag and drop zones
-- Manages the visual layout
+- Shows a list of saved designs
+- Allows searching and loading designs
+- Allows deleting designs
+- No category dropdown (as per latest update)
 
-**Key Features**:
-- **Background**: Shows wall color or image
-- **Photo Display**: Renders uploaded photo with selected frame
-- **Item Rendering**: Shows all placed items
-- **Drop Zone**: Accepts dragged items from palette
+**Where to find**: `src/components/DesignManager.jsx`
 
-**Where to find**: `src/components/AltarCanvas.jsx`
+### 5. Register.jsx / Login.jsx
+**Purpose**: User authentication forms
+
+**What they do**:
+- Register.jsx: Handles user registration
+- Login.jsx: Handles user login
+
+**Where to find**: `src/components/Register.jsx`, `src/components/Login.jsx`
 
 ---
 
@@ -313,209 +329,4 @@ const handlePhotoUpload = (e) => {
 | `deceasedPhotoPos` | Photo position | object | {x: null, y: null, dragging: false} |
 | `frameDimensions` | Photo size | object | {width: 180, height: 220} |
 | `draggingItem` | Item being dragged | object | {idx: null, offsetX: 0, offsetY: 0} |
-| `selectedItem` | Currently selected item | number/null | null |
-| `customStickers` | Custom uploaded stickers | array | [] |
-
-### How State Flows
-1. **User Action** → **State Update** → **UI Re-render**
-2. Example: User uploads photo → `deceasedPhoto` state changes → Photo appears on canvas
-
----
-
-## 🔧 How to Make Changes
-
-### Adding New Features
-
-#### 1. Add New Altar Item
-**Steps**:
-1. Add image to `public/images/` folder
-2. Add item data to `ItemPalette.jsx` items array
-3. Item will automatically appear in palette
-
-**Code to modify**: `ItemPalette.jsx` items array
-
-#### 2. Add New Frame Style
-**Steps**:
-1. Add frame style option to dropdown in `ItemPalette.jsx`
-2. Add frame rendering logic in `AltarBuilder.jsx` renderDeceasedPhotoWithFrame function
-
-**Code to modify**: 
-- `ItemPalette.jsx` frame style dropdown
-- `AltarBuilder.jsx` renderDeceasedPhotoWithFrame function
-
-#### 3. Add New Wall Color
-**Steps**:
-1. Add color option to color picker in `ItemPalette.jsx`
-2. Color will automatically work with existing wall color logic
-
-**Code to modify**: `ItemPalette.jsx` wall color section
-
-### Modifying Existing Features
-
-#### 1. Change Photo Size
-**Location**: `AltarBuilder.jsx` line 18
-```javascript
-const [frameDimensions, setFrameDimensions] = useState({ width: 180, height: 220 });
-```
-
-#### 2. Change Default Wall Color
-**Location**: `AltarBuilder.jsx` line 15
-```javascript
-const [wallBgColor, setWallBgColor] = useState('#f5f3ef');
-```
-
-#### 3. Change Download Quality
-**Location**: `AltarBuilder.jsx` lines 70-75
-```javascript
-const canvasImage = await html2canvas(canvas, {
-  backgroundColor: null,
-  scale: 2, // Change this number for quality
-  useCORS: true,
-  allowTaint: true,
-});
-```
-
-#### 4. Change Item Size
-**Location**: `AltarBuilder.jsx` lines 125-130
-```javascript
-const stickerWidth = 48;  // Change these values
-const stickerHeight = 48;
-```
-
-### Common Change Locations
-
-| What to Change | File | Line Range |
-|---|---|---|
-| Photo upload logic | AltarBuilder.jsx | 100-110 |
-| Drag and drop behavior | AltarBuilder.jsx | 120-140 |
-| Resize functionality | AltarBuilder.jsx | 200-350 |
-| Download settings | AltarBuilder.jsx | 60-90 |
-| Wall colors | ItemPalette.jsx | Wall color section |
-| Altar items | ItemPalette.jsx | Items array |
-| Frame styles | ItemPalette.jsx | Frame dropdown |
-| Visual styling | AltarCanvas.jsx | Rendering functions |
-
----
-
-## 🔍 Technical Details
-
-### Key Functions Explained
-
-#### 1. Mouse Event Handlers
-```javascript
-// These handle all the dragging and resizing
-handleDeceasedPhotoMouseDown()  // Start dragging photo
-handleDeceasedPhotoMouseMove()  // Move photo while dragging
-handleDeceasedPhotoMouseUp()    // Stop dragging photo
-handleItemMouseDown()           // Start dragging item
-handleItemMouseMove()           // Move item while dragging
-handleItemMouseUp()             // Stop dragging item
-```
-
-#### 2. Resize Handlers
-```javascript
-handleResizeStart()    // Start resizing photo
-handleResizeMove()     // Resize photo while dragging
-handleResizeEnd()      // Stop resizing photo
-handleItemResizeStart() // Start resizing item
-handleItemResizeMove()  // Resize item while dragging
-handleItemResizeEnd()   // Stop resizing item
-```
-
-#### 3. Utility Functions
-```javascript
-renderDeceasedPhotoWithFrame()  // Renders photo with selected frame
-handleDeleteItem()              // Removes item from altar
-handleDownload()                // Saves altar as image
-handleCustomStickerUpload()     // Adds custom sticker
-```
-
-### CSS Classes Used
-- `.altar-builder`: Main container
-- `.control-panel`: Top control area
-- `.palette`: Sidebar with items
-- `.canvas`: Main altar area
-- `.item`: Individual altar items
-- `.photo-frame`: Photo container
-- `.resize-handle`: Invisible resize areas
-
----
-
-## 🚨 Troubleshooting Guide
-
-### Common Issues and Solutions
-
-#### 1. "Module not found" Error
-**Problem**: Missing import or dependency
-**Solution**: Check import statements and install missing packages
-
-#### 2. Items Not Dragging
-**Problem**: Mouse event handlers not working
-**Solution**: Check `handleItemMouseDown`, `handleItemMouseMove`, `handleItemMouseUp` functions
-
-#### 3. Photo Not Uploading
-**Problem**: File reader not working
-**Solution**: Check `handleDeceasedPhotoUpload` function in `AltarBuilder.jsx`
-
-#### 4. Download Not Working
-**Problem**: html2canvas not capturing properly
-**Solution**: Check canvas ID and html2canvas configuration
-
-#### 5. Items Not Resizing
-**Problem**: Resize handlers not working
-**Solution**: Check resize event handlers and resize zones
-
-### Debug Tips
-1. **Check Console**: Look for JavaScript errors
-2. **Check State**: Use React DevTools to see state values
-3. **Check Elements**: Inspect DOM to see if elements are rendering
-4. **Check Network**: Look for failed requests
-
----
-
-## 📚 Learning Resources
-
-### React Concepts Used
-- **useState**: Managing component state
-- **useEffect**: Handling side effects
-- **Event Handlers**: Mouse and keyboard events
-- **Props**: Passing data between components
-- **Conditional Rendering**: Showing/hiding elements
-
-### JavaScript Concepts Used
-- **Array Methods**: map, filter, spread operator
-- **Object Destructuring**: Extracting values from objects
-- **Async/Await**: Handling file uploads and downloads
-- **Event Handling**: Mouse and keyboard events
-- **DOM Manipulation**: Working with HTML elements
-
-### CSS Concepts Used
-- **Flexbox**: Layout management
-- **Grid**: Item organization
-- **Positioning**: Absolute and relative positioning
-- **Transforms**: Scaling and rotating elements
-- **Transitions**: Smooth animations
-
----
-
-## 🎯 Quick Reference
-
-### File Purposes
-- **AltarBuilder.jsx**: Main logic and state management
-- **ItemPalette.jsx**: Sidebar with controls and items
-- **AltarCanvas.jsx**: Main canvas area
-- **WelcomePage.jsx**: Landing page
-
-### Key Functions
-- **Photo Upload**: `handleDeceasedPhotoUpload`
-- **Drag & Drop**: `handleDrop`, `handleItemMouseDown`
-- **Resize**: `handleResizeStart`, `handleItemResizeStart`
-- **Download**: `handleDownload`
-- **Delete**: `handleDeleteItem`
-
-### State Variables
-- **Photo**: `deceasedPhoto`, `frameStyle`, `frameDimensions`
-- **Items**: `items`, `draggingItem`, `selectedItem`
-- **UI**: `showPalette`, `wallBgColor`, `altarName`
-
-This documentation should give you a complete understanding of the project and help you explain it to your manager confidently! 🚀 
+| `

@@ -14,20 +14,35 @@ A React-based web application for creating and customizing 3D altar designs with
 │   │   ├── src/
 │   │   │   ├── components/
 │   │   │   │   ├── AltarBuilder.jsx    # Main altar builder component
-│   │   │   │   ├── AltarCanvas.jsx     # Canvas for altar design
 │   │   │   │   ├── ItemPalette.jsx     # Sidebar with items and controls
-│   │   │   │   └── WelcomePage.jsx     # Landing page
+│   │   │   │   ├── DesignManager.jsx   # Modal for loading/saving designs
+│   │   │   │   ├── WelcomePage.jsx     # Landing page
+│   │   │   │   ├── Register.jsx        # Registration form
+│   │   │   │   └── Login.jsx           # Login form
+│   │   │   ├── services/
+│   │   │   │   └── designService.js    # API service for design operations
+│   │   │   ├── context/
+│   │   │   │   └── AuthContext.js      # Authentication context
 │   │   │   ├── App.js
 │   │   │   ├── index.js
 │   │   │   └── index.css
 │   │   └── package.json
-│   └── backend/           # Node.js backend (for future development)
+│   └── backend/           # Node.js backend
 │       ├── src/
-│       │   ├── altar.model.js
+│       │   ├── models/
+│       │   │   ├── Design.js
+│       │   │   └── User.js
+│       │   ├── routes/
+│       │   │   ├── designs.js
+│       │   │   └── auth.js
+│       │   ├── middleware/
+│       │   │   └── auth.js
 │       │   └── index.js
 │       └── package.json
 └── README.md
 ```
+
+*All unnecessary files and unused models have been removed for a clean, maintainable codebase.*
 
 ## ✨ Features
 
@@ -67,8 +82,25 @@ A React-based web application for creating and customizing 3D altar designs with
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
+- MongoDB (for backend functionality)
 
-### Installation
+### Quick Start (Recommended)
+
+**Windows Users:**
+```bash
+# Double-click the start-servers.bat file
+# OR run from command line:
+start-servers.bat
+```
+
+**Linux/Mac Users:**
+```bash
+# Make the script executable and run:
+chmod +x start-servers.sh
+./start-servers.sh
+```
+
+### Manual Installation
 
 1. **Clone the repository**
    ```bash
@@ -76,28 +108,44 @@ A React-based web application for creating and customizing 3D altar designs with
    cd 3D_Room_Designing
    ```
 
-2. **Install frontend dependencies**
+2. **Install backend dependencies**
    ```bash
-   cd Altar_Creation/frontend
+   cd Altar_Creation/backend
    npm install
    ```
 
-3. **Start the development server**
+3. **Install frontend dependencies**
    ```bash
+   cd ../frontend
+   npm install
+   ```
+
+4. **Set up MongoDB**
+   - Install MongoDB on your system
+   - Start MongoDB service
+   - Create a `.env` file in the backend directory with:
+     ```
+     MONGO_URI=mongodb://localhost:27017/altar_db
+     JWT_SECRET=your_jwt_secret_here
+     ```
+
+5. **Start the servers**
+   
+   **Terminal 1 - Backend:**
+   ```bash
+   cd Altar_Creation/backend
+   npm run dev
+   ```
+   
+   **Terminal 2 - Frontend:**
+   ```bash
+   cd Altar_Creation/frontend
    npm start
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-### Backend Setup (Optional)
-The backend is included for future development. To set it up:
-
-```bash
-cd Altar_Creation/backend
-npm install
-npm start
-```
+6. **Open your browser**
+   - Frontend: `http://localhost:3000`
+   - Backend API: `http://localhost:5000`
 
 ## 🛠️ Technologies Used
 
@@ -109,7 +157,10 @@ npm start
 
 ### Backend
 - **Node.js**: Server runtime
-- **Express**: Web framework (planned)
+- **Express**: Web framework
+- **MongoDB**: Database
+- **JWT**: Authentication
+- **bcryptjs**: Password hashing
 
 ## 📱 Usage Guide
 
@@ -138,9 +189,10 @@ npm start
 ### Key Components
 
 - **AltarBuilder.jsx**: Main orchestrator component
-- **AltarCanvas.jsx**: Handles canvas interactions and rendering
 - **ItemPalette.jsx**: Manages sidebar items and controls
+- **DesignManager.jsx**: Modal for loading/saving designs
 - **WelcomePage.jsx**: Landing page component
+- **Register.jsx / Login.jsx**: Authentication forms
 
 ### State Management
 The app uses React's built-in state management with hooks:
@@ -149,19 +201,49 @@ The app uses React's built-in state management with hooks:
 - Custom hooks for complex logic
 
 ### File Structure
-- **Components**: Modular React components
+- **Components**: Modular React components (no unused files)
 - **Public/Images**: Static assets for altar items
 - **CSS**: Component-specific styling
 
+## 🛠️ Clean Codebase
+
+- All unused files, models, and configs have been removed.
+- Only essential files for frontend and backend remain.
+- Easy to navigate, maintain, and extend.
+
+## ✨ New Features (v2.0)
+
+### 🔐 User Authentication
+- **User Registration**: Create accounts with email and password
+- **User Login**: Secure authentication with JWT tokens
+- **User Profiles**: Manage personal information
+- **Logout**: Secure session management
+
+### 💾 Design Management
+- **Save Designs**: Save altar designs to your account
+- **Load Designs**: Access and edit your saved designs
+- **Design Library**: Browse all your created designs
+- **Design Categories**: Organize designs by type (memorial, religious, etc.)
+- **Public/Private**: Choose to share designs publicly or keep them private
+- **Design Tags**: Add tags for better organization
+- **Download Tracking**: Track how many times designs are downloaded
+
+### 🎨 Enhanced UI/UX
+- **Design Manager Modal**: Easy access to saved designs
+- **Top Navigation Bar**: Quick access to save, load, and download features
+- **Error Handling**: User-friendly error messages
+- **Loading States**: Visual feedback during operations
+- **Responsive Design**: Works on all screen sizes
+
 ## 🎯 Future Enhancements
 
-- [ ] Backend integration for saving designs
-- [ ] User accounts and design history
 - [ ] More altar item categories
 - [ ] 3D perspective views
 - [ ] Template library
 - [ ] Social sharing features
 - [ ] Mobile app version
+- [ ] Design collaboration
+- [ ] Advanced image editing tools
 
 ## 🤝 Contributing
 

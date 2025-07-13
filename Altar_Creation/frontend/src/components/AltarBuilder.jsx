@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ItemPalette from './ItemPalette';
+import DesignManager from './DesignManager';
+import designService from '../services/designService';
 
-export default function AltarBuilder() {
+export default function AltarBuilder({ user, onLogout }) {
   const [altarName, setAltarName] = useState('');
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [items, setItems] = useState([]);
@@ -34,6 +36,12 @@ export default function AltarBuilder() {
   const [hoveredItem, setHoveredItem] = useState(null);
   // Add selected item state for keyboard delete
   const [selectedItem, setSelectedItem] = useState(null);
+  
+  // Add design management states
+  const [showDesignManager, setShowDesignManager] = useState(false);
+  const [currentDesign, setCurrentDesign] = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const handleFrameImageUpload = (e) => {
     const file = e.target.files[0];
@@ -69,6 +77,86 @@ export default function AltarBuilder() {
       // Adjust selection index if we deleted an item before the selected one
       setSelectedItem(selectedItem - 1);
     }
+  };
+
+  // Design management handlers
+  const handleSaveDesign = async () => {
+    if (!altarName.trim()) {
+      setSaveError('Please enter an altar name');
+      return;
+    }
+
+    setSaveLoading(true);
+    setSaveError('');
+
+    try {
+      const altarData = {
+        wallBgColor,
+        wallBgImage,
+        deceasedPhoto,
+        frameStyle,
+        deceasedPhotoPos,
+        frameDimensions,
+        items,
+        customStickers,
+        canvasWidth: wallWidth,
+        canvasHeight: wallHeight
+      };
+
+      const designData = {
+        name: altarName.trim(),
+        description: `Altar design: ${altarName}`,
+        category: 'memorial',
+        isPublic: false,
+        tags: ['altar', 'memorial'],
+        altarData
+      };
+
+      let result;
+      if (currentDesign && currentDesign._id) {
+        // Update existing design
+        result = await designService.updateDesign(currentDesign._id, designData);
+      } else {
+        // Create new design
+        result = await designService.createDesign(designData);
+      }
+
+      if (result.success) {
+        setCurrentDesign(result.design);
+        setSaveError('');
+        alert('Design saved successfully!');
+      } else {
+        setSaveError(result.error);
+      }
+    } catch (error) {
+      setSaveError('Failed to save design');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleLoadDesign = (design) => {
+    const { altarData } = design;
+    
+    // Load altar data
+    setAltarName(design.name);
+    setWallBgColor(altarData.wallBgColor || '#f5f3ef');
+    setWallBgImage(altarData.wallBgImage || null);
+    setDeceasedPhoto(altarData.deceasedPhoto || null);
+    setFrameStyle(altarData.frameStyle || 'classic');
+    setDeceasedPhotoPos(altarData.deceasedPhotoPos || { x: null, y: null, dragging: false, offsetX: 0, offsetY: 0 });
+    setFrameDimensions(altarData.frameDimensions || { width: 180, height: 220 });
+    setItems(altarData.items || []);
+    setCustomStickers(altarData.customStickers || []);
+    setWallWidth(altarData.canvasWidth || 600);
+    setWallHeight(altarData.canvasHeight || 360);
+    
+    setCurrentDesign(design);
+  };
+
+  const handleDesignSaveSuccess = (design) => {
+    setCurrentDesign(design);
+    setSaveError('');
   };
 
   // Download handler for saving altar as image
@@ -108,6 +196,11 @@ export default function AltarBuilder() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Increment download count if we have a current design
+      if (currentDesign && currentDesign._id) {
+        designService.incrementDownload(currentDesign._id);
+      }
     } catch (error) {
       console.error('Download failed:', error);
       alert('Failed to download altar. Please try again.');
@@ -133,7 +226,7 @@ export default function AltarBuilder() {
     e.preventDefault();
     const canvasRect = e.target.getBoundingClientRect();
     try {
-      const item = JSON.parse(e.dataTransfer.getData('item'));
+    const item = JSON.parse(e.dataTransfer.getData('item'));
       if (typeof item.img !== 'string') {
         console.error('Dropped item.img is not a string!', item);
         return;
@@ -143,7 +236,7 @@ export default function AltarBuilder() {
       const stickerHeight = 48;
       const x = e.clientX - canvasRect.left - stickerWidth / 2;
       const y = e.clientY - canvasRect.top - stickerHeight / 2;
-      setItems((prev) => [...prev, { ...item, x, y }]);
+    setItems((prev) => [...prev, { ...item, x, y }]);
     } catch (err) {
       console.error('Error parsing dropped item:', err);
     }
@@ -433,7 +526,7 @@ export default function AltarBuilder() {
       frameRadius = '18px';
     }
     return (
-      <div style={{
+        <div style={{
         position: 'absolute',
         left: '50%',
         top: '30%',
@@ -443,11 +536,11 @@ export default function AltarBuilder() {
         background: frameBg,
         border: frameBorder,
         borderRadius: frameRadius,
-        boxShadow: '0 4px 24px rgba(80,60,20,0.10)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(80,60,20,0.10)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
         zIndex: 5,
       }}>
         <img src={deceasedPhoto} alt="Deceased" style={{
@@ -458,31 +551,26 @@ export default function AltarBuilder() {
           boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
         }} />
         {frameImgOverlay}
-      </div>
+        </div>
     );
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #e8e6e3 0%, #f5f3ef 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: 'Segoe UI, Arial, sans-serif',
-    }}>
-      {/* Top bar */}
+    <div style={{ height: '100vh', background: '#f5f3ef', fontFamily: 'Segoe UI, Arial, sans-serif', overflowX: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {/* Top bar with design management and logout */}
       <div style={{
         width: '100%',
         background: '#fff',
         borderBottom: '1px solid #e0ddd7',
-        padding: '12px 32px',
+        padding: '12px 72px 12px 32px', // Even more right padding
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         boxShadow: '0 2px 8px rgba(80,60,20,0.04)',
         position: 'relative',
+        boxSizing: 'border-box', // Ensure padding is included in width
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
           <input
             type="text"
             placeholder="Altar Name"
@@ -493,10 +581,49 @@ export default function AltarBuilder() {
               borderRadius: 8,
               border: '1px solid #e0ddd7',
               fontSize: 16,
-              minWidth: 180,
+              minWidth: 120,
+              maxWidth: 200,
             }}
           />
-                      <div style={{ position: 'relative' }}>
+          
+          {/* Design management buttons */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={handleSaveDesign}
+              disabled={saveLoading}
+              style={{
+                background: saveLoading ? '#ccc' : '#4caf50',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 12px',
+                cursor: saveLoading ? 'not-allowed' : 'pointer',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: 13,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {saveLoading ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              onClick={() => setShowDesignManager(true)}
+              style={{
+                background: '#2196f3',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 12px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: 13,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Load
+            </button>
+            
+            {/* Download button */}
+            <div style={{ position: 'relative' }}>
               <button
                 onClick={handleDownload}
                 disabled={isDownloading}
@@ -504,52 +631,81 @@ export default function AltarBuilder() {
                   background: isDownloading ? '#ccc' : '#e0ddd7',
                   border: 'none',
                   borderRadius: 8,
-                  padding: '8px 18px',
+                  padding: '8px 12px',
                   cursor: isDownloading ? 'not-allowed' : 'pointer',
                   color: '#5a4a2c',
                   fontWeight: 600,
-                  fontSize: 16,
+                  fontSize: 13,
                   opacity: isDownloading ? 0.7 : 1,
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {isDownloading ? 'Generating...' : 'Download'}
               </button>
-            <select
-              value={downloadFormat}
-              onChange={e => setDownloadFormat(e.target.value)}
-              style={{
-                position: 'absolute',
-                right: -90,
-                top: 0,
-                padding: '6px 12px',
-                borderRadius: 8,
-                border: '1px solid #e0ddd7',
-                fontSize: 15,
-                background: '#fff',
-              }}
-            >
-              <option value="png">PNG</option>
-              <option value="jpg">JPG</option>
-            </select>
+              <select
+                value={downloadFormat}
+                onChange={e => setDownloadFormat(e.target.value)}
+                style={{
+                  position: 'absolute',
+                  right: -70,
+                  top: 0,
+                  padding: '6px 8px',
+                  borderRadius: 8,
+                  border: '1px solid #e0ddd7',
+                  fontSize: 12,
+                  background: '#fff',
+                }}
+              >
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main layout */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        {showPalette && (
-          <div style={{
-            width: 200,
-            background: '#fff',
-            borderRight: '1px solid #e0ddd7',
-            padding: '24px 8px',
-            boxShadow: '2px 0 8px rgba(80,60,20,0.04)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minHeight: 'calc(100vh - 60px)',
-            gap: 24,
-          }}>
+        {/* Right side - User info and logout */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexShrink: 0, marginLeft: 'auto' }}>
+          {user && (
+            <span style={{ color: '#5a4a2c', fontSize: 14, whiteSpace: 'nowrap' }}>
+              Welcome, {user.firstName || user.username}
+            </span>
+          )}
+          <button
+            onClick={onLogout}
+            style={{
+              background: '#f44336',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 16px',
+              cursor: 'pointer',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: 14,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              marginLeft: 8,
+              marginRight: 8, // Added right margin
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+      {/* Main layout: palette/sidebar on the left, builder/canvas on the right */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {/* Sidebar/Palette on the left */}
+        <div style={{
+          width: 220,
+          background: '#fff',
+          borderRight: '1px solid #e0ddd7',
+          padding: '24px 8px',
+          boxShadow: '2px 0 8px rgba(80,60,20,0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          overflowY: 'auto',
+          gap: 24,
+        }}>
             <div style={{ fontWeight: 600, color: '#5a4a2c', marginBottom: 8 }}>
               Wall Dimensions
             </div>
@@ -574,103 +730,83 @@ export default function AltarBuilder() {
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-              <label style={{ color: '#5a4a2c', fontWeight: 600 }}>
-                Wall Color
-                <input type="color" value={wallBgColor} onChange={e => setWallBgColor(e.target.value)} style={{ marginLeft: 8 }} />
-              </label>
-              <label style={{ color: '#5a4a2c', fontWeight: 600, cursor: 'pointer' }}>
-                Upload Wall Image
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleWallBgImageUpload} />
-              </label>
-              {wallBgImage && (
-                <button onClick={handleResetWallBg} style={{ background: '#e0ddd7', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: '#5a4a2c', fontWeight: 600 }}>
-                  Remove Image
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <label style={{ color: '#5a4a2c', fontWeight: 600 }}>
+              Wall Color
+              <input type="color" value={wallBgColor} onChange={e => setWallBgColor(e.target.value)} style={{ marginLeft: 8 }} />
+            </label>
+            <label style={{ color: '#5a4a2c', fontWeight: 600, cursor: 'pointer' }}>
+              Upload Wall Image
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleWallBgImageUpload} />
+            </label>
+            {wallBgImage && (
+              <button onClick={handleResetWallBg} style={{ background: '#e0ddd7', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: '#5a4a2c', fontWeight: 600 }}>
+                Remove Image
+              </button>
+            )}
+            </div>
+
+          {/* Deceased photo upload and frame style selector */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <label style={{ color: '#5a4a2c', fontWeight: 600, cursor: 'pointer' }}>
+              Upload Deceased Photo
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleDeceasedPhotoUpload} />
+            </label>
+            {deceasedPhoto && (
+              <>
+                <img src={deceasedPhoto} alt="Preview" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, margin: '0 auto' }} />
+                <button
+                  onClick={() => setDeceasedPhoto(null)}
+                  style={{
+                    marginTop: 4,
+                    background: '#e0ddd7',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    color: '#5a4a2c',
+                    fontWeight: 600,
+                    fontSize: 13,
+                  }}
+                >
+                  Delete Photo
                 </button>
-              )}
-            </div>
-            {/* New deceased photo upload and frame style selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-              <label style={{ color: '#5a4a2c', fontWeight: 600, cursor: 'pointer' }}>
-                Upload Deceased Photo
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleDeceasedPhotoUpload} />
-              </label>
-              {deceasedPhoto && (
-                <>
-                  <img src={deceasedPhoto} alt="Preview" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, margin: '0 auto' }} />
-                  <button
-                    onClick={() => setDeceasedPhoto(null)}
-                    style={{
-                      marginTop: 4,
-                      background: '#e0ddd7',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '6px 12px',
-                      cursor: 'pointer',
-                      color: '#5a4a2c',
-                      fontWeight: 600,
-                      fontSize: 13,
-                    }}
-                  >
-                    Delete Photo
-                  </button>
-                </>
-              )}
-              <label style={{ color: '#5a4a2c', fontWeight: 600 }}>Frame Style</label>
-              <select
-                value={frameStyle}
-                onChange={e => setFrameStyle(e.target.value)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  border: '1px solid #e0ddd7',
-                  fontSize: 15,
-                  background: '#fff',
-                }}
-              >
-                <option value="classic">Classic Rectangle</option>
-                <option value="ornate">Ornate Oval</option>
-                <option value="modern">Modern Circle</option>
-              </select>
-            </div>
-
-            <ItemPalette 
-              onDragStart={handleDragStart} 
-              customItems={customStickers}
-              onCustomStickerUpload={handleCustomStickerUpload}
-            />
+              </>
+            )}
+            <label style={{ color: '#5a4a2c', fontWeight: 600 }}>Frame Style</label>
+            <select
+              value={frameStyle}
+              onChange={e => setFrameStyle(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: '1px solid #e0ddd7',
+                fontSize: 15,
+                background: '#fff',
+              }}
+            >
+              <option value="classic">Classic Rectangle</option>
+              <option value="ornate">Ornate Oval</option>
+              <option value="modern">Modern Circle</option>
+            </select>
           </div>
-        )}
 
-        <button
-          style={{
-            position: 'absolute',
-            left: showPalette ? 210 : 10,
-            top: 80,
-            zIndex: 10,
-            background: '#e0ddd7',
-            border: 'none',
-            borderRadius: 8,
-            padding: '8px 12px',
-            cursor: 'pointer',
-            color: '#5a4a2c',
-            fontWeight: 600,
-            fontSize: 14,
-            boxShadow: '0 2px 8px rgba(80,60,20,0.08)',
-          }}
-          onClick={() => setShowPalette((v) => !v)}
-        >
-          {showPalette ? 'Hide Palette' : 'Show Palette'}
-        </button>
-
-        <div
-          style={{
-            flex: 1,
-            position: 'relative',
-            background: '#f5f3ef',
-            display: 'flex',
-            alignItems: 'center',
+          <ItemPalette 
+            onDragStart={handleDragStart} 
+            customItems={customStickers}
+            onCustomStickerUpload={handleCustomStickerUpload}
+                />
+              </div>
+        {/* Builder/canvas area on the right */}
+        <div 
+          style={{ 
+            flex: 1, 
+            position: 'relative', 
+            background: '#f5f3ef', 
+            display: 'flex', 
+            alignItems: 'center', 
             justifyContent: 'center',
+            minHeight: '400px' // Ensure minimum height
           }}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -851,9 +987,9 @@ export default function AltarBuilder() {
                     <img
                       src={item.img}
                       alt={typeof item.label === 'string' ? item.label : ''}
-                      style={{
-                        width: '100%',
-                        height: '100%',
+                  style={{
+                    width: '100%',
+                    height: '100%',
                         cursor: 'grab',
                         userSelect: 'none',
                       }}
@@ -881,9 +1017,9 @@ export default function AltarBuilder() {
                           fontWeight: 'bold',
                           cursor: 'pointer',
                           zIndex: 15,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                           boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                         }}
                         title="Delete item"
@@ -991,7 +1127,7 @@ export default function AltarBuilder() {
                       }}
                       onMouseDown={(e) => handleItemResizeStart(e, idx, 'e')}
                     />
-                  </div>
+                </div>
                 );
               } else {
                 console.warn('Skipping invalid item:', item);
@@ -1001,6 +1137,31 @@ export default function AltarBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Design Manager Modal */}
+      <DesignManager
+        isOpen={showDesignManager}
+        onClose={() => setShowDesignManager(false)}
+        onLoadDesign={handleLoadDesign}
+      />
+
+      {/* Error message for save errors */}
+      {saveError && (
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          right: 20,
+          background: '#f44336',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: 8,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          zIndex: 1001,
+          maxWidth: 300,
+        }}>
+          {saveError}
+        </div>
+      )}
     </div>
   );
-}
+} 

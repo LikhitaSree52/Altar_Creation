@@ -1,5 +1,7 @@
 # Manager Presentation Guide - 3D Room Designing Altar Builder
 
+> **Note:** The codebase is now clean and only contains essential files for frontend and backend. All unnecessary files and unused models have been removed for maintainability and clarity.
+
 ## 🎯 Quick Project Summary (30 seconds)
 
 **What we built**: A web application that lets users create digital altar designs for memorial purposes.
