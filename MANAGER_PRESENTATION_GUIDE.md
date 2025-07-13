@@ -1,3 +1,7 @@
+# Project Brief
+
+A full-stack web app for 3D Room Designing with an altar builder, built using React (frontend) and Node.js/Express with MongoDB (backend). Users can register/login, design custom altars with drag-and-drop, save/load their designs to the cloud, and download images. All features are modular, with clean UI/UX, and the codebase is fully documented and maintainable.
+
 # Manager Presentation Guide - 3D Room Designing Altar Builder
 
 > **Note:** The codebase is now clean and only contains essential files for frontend and backend. All unnecessary files and unused models have been removed for maintainability and clarity.
