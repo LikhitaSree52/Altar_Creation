@@ -73,6 +73,8 @@ A full-stack web app for 3D Room Designing with an altar builder, built using Re
 - **Item Library**: 10+ pre-built decorative items
 - **Customization**: Wall colors, custom stickers
 - **Export Options**: PNG and JPG download formats
+- **User Accounts**: Registration, login, and authentication
+- **Design Saving**: Save and load designs from cloud storage
 
 ---
 
@@ -94,17 +96,16 @@ A full-stack web app for 3D Room Designing with an altar builder, built using Re
 ## 🔮 Future Roadmap
 
 ### Phase 2 Features
-- User accounts and design saving
 - Template library
 - Social sharing
 - Mobile app version
 - 3D perspective views
 
 ### Technical Enhancements
-- Backend integration for data persistence
-- Cloud storage for designs
 - Advanced image editing tools
 - Multi-language support
+- Enhanced cloud storage features
+- Performance optimizations
 
 ---
 
