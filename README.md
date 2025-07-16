@@ -1,11 +1,11 @@
-# 3D Room Designing - Altar Builder
+# Altar Designing - Altar Builder
 
 A React-based web application for creating and customizing 3D altar designs with an intuitive drag-and-drop interface.
 
 ## 🏗️ Project Structure
 
 ```
-3D_Room_Designing/
+Altar_Designing/
 ├── Altar_Creation/
 │   ├── frontend/          # React frontend application
 │   │   ├── public/
@@ -105,7 +105,7 @@ chmod +x start-servers.sh
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd 3D_Room_Designing
+   cd Altar_Designing
    ```
 
 2. **Install backend dependencies**

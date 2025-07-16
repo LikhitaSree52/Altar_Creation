@@ -26,8 +26,23 @@ const designSchema = new mongoose.Schema({
     },
     wallBgImage: String,
     
-    // Deceased photo
+    // Deceased photo (single, for backward compatibility)
     deceasedPhoto: String,
+    // Multiple deceased photos (new)
+    deceasedPhotos: [{
+      src: String,
+      pos: {
+        x: { type: Number, default: null },
+        y: { type: Number, default: null },
+        dragging: { type: Boolean, default: false },
+        offsetX: { type: Number, default: 0 },
+        offsetY: { type: Number, default: 0 }
+      },
+      dimensions: {
+        width: { type: Number, default: 180 },
+        height: { type: Number, default: 220 }
+      }
+    }],
     frameStyle: {
       type: String,
       enum: ['classic', 'ornate', 'modern'],
@@ -92,6 +107,22 @@ const designSchema = new mongoose.Schema({
   downloads: {
     type: Number,
     default: 0
+  },
+  
+  // Sharing fields
+  sharePeople: [{
+    email: { type: String, required: true, trim: true, lowercase: true },
+    name: { type: String, trim: true },
+    role: { type: String, enum: ['viewer', 'commenter', 'editor', 'owner'], default: 'viewer' }
+  }],
+  generalAccess: {
+    enabled: { type: Boolean, default: false }, // true = anyone with link
+    role: { type: String, enum: ['viewer', 'commenter', 'editor'], default: 'viewer' }
+  },
+  shareToken: {
+    type: String,
+    unique: true,
+    sparse: true // allow null for designs not shared
   },
   
   // Timestamps

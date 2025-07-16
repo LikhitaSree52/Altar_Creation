@@ -206,4 +206,4 @@ router.put('/profile', auth, [
   }
 });
 
-module.exports = router; 
+module.exports = router;

@@ -170,6 +170,64 @@ class DesignService {
       return { success: false, error: error.message };
     }
   }
+
+  // Generate or update a share link and settings
+  async generateOrUpdateShareLink(designId, generalAccess, sharePeople) {
+    try {
+      const response = await fetch(`${this.baseURL}/designs/${designId}/share`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ generalAccess, sharePeople })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to generate share link');
+      }
+      return { success: true, ...data };
+    } catch (error) {
+      console.error('Generate share link error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Update sharing settings (people, roles, general access)
+  async updateShareSettings(designId, generalAccess, sharePeople) {
+    try {
+      const response = await fetch(`${this.baseURL}/designs/${designId}/share`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ generalAccess, sharePeople })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update sharing settings');
+      }
+      return { success: true, ...data };
+    } catch (error) {
+      console.error('Update share settings error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Fetch a design by share token (for public access)
+  async getDesignByShareToken(token, email = null) {
+    try {
+      let url = `${this.baseURL}/designs/share/${token}`;
+      if (email) url += `?email=${encodeURIComponent(email)}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch shared design');
+      }
+      return { success: true, ...data };
+    } catch (error) {
+      console.error('Get design by share token error:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 export default new DesignService(); 

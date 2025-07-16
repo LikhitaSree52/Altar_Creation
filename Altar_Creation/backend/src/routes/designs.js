@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Design = require('../models/Design');
 const auth = require('../middleware/auth');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -300,6 +301,94 @@ router.post('/:id/download', async (req, res) => {
 
   } catch (error) {
     console.error('Update download count error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/designs/:id/share
+// @desc    Generate or update a share link, set general access, manage people/roles
+// @access  Private (owner only)
+router.post('/:id/share', auth, async (req, res) => {
+  try {
+    const { generalAccess, sharePeople } = req.body;
+    const design = await Design.findById(req.params.id);
+    if (!design) return res.status(404).json({ message: 'Design not found' });
+    if (design.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    // Generate a share token if not present
+    if (!design.shareToken) {
+      design.shareToken = crypto.randomBytes(12).toString('hex');
+    }
+    // Update sharing settings
+    if (generalAccess) design.generalAccess = generalAccess;
+    if (sharePeople) design.sharePeople = sharePeople;
+    await design.save();
+    res.json({
+      message: 'Share link generated',
+      shareLink: `${req.protocol}://${req.get('host')}/api/designs/share/${design.shareToken}`,
+      shareToken: design.shareToken,
+      generalAccess: design.generalAccess,
+      sharePeople: design.sharePeople
+    });
+  } catch (error) {
+    console.error('Share link error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/designs/:id/share
+// @desc    Update sharing settings (people, roles, general access)
+// @access  Private (owner only)
+router.put('/:id/share', auth, async (req, res) => {
+  try {
+    const { generalAccess, sharePeople } = req.body;
+    const design = await Design.findById(req.params.id);
+    if (!design) return res.status(404).json({ message: 'Design not found' });
+    if (design.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    if (generalAccess) design.generalAccess = generalAccess;
+    if (sharePeople) design.sharePeople = sharePeople;
+    await design.save();
+    res.json({
+      message: 'Sharing settings updated',
+      generalAccess: design.generalAccess,
+      sharePeople: design.sharePeople
+    });
+  } catch (error) {
+    console.error('Update share settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/designs/share/:token
+// @desc    Fetch a design by share token, enforce access control
+// @access  Public (role determined by token/email)
+router.get('/share/:token', async (req, res) => {
+  try {
+    const { email } = req.query; // email can be passed as query param if logged in
+    const design = await Design.findOne({ shareToken: req.params.token });
+    if (!design) return res.status(404).json({ message: 'Design not found' });
+    // Determine role
+    let role = 'none';
+    if (email) {
+      const person = design.sharePeople.find(p => p.email === email.toLowerCase());
+      if (person) role = person.role;
+    }
+    if (role === 'none' && design.generalAccess && design.generalAccess.enabled) {
+      role = design.generalAccess.role || 'viewer';
+    }
+    if (role === 'none') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    // Only allow actions based on role
+    res.json({
+      design,
+      role
+    });
+  } catch (error) {
+    console.error('Fetch by share token error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

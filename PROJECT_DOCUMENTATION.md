@@ -1,4 +1,4 @@
-# 3D Room Designing - Altar Builder Project Documentation
+# Altar Designing - Altar Builder Project Documentation
 
 ## 📋 Table of Contents
 1. [Project Overview](#project-overview)
