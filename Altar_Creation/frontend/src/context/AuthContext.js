@@ -177,7 +177,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfile,
-    isAuthenticated: !!token
+    isAuthenticated: !!token,
+    role: user ? user.role : 'user'
   };
 
   return (

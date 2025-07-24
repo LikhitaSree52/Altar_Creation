@@ -117,6 +117,13 @@ router.post('/login', [
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Check if user is admin for admin dashboard access
+    if (email === 'likhitasreemandula@gmail.com') {
+      user.role = 'admin';
+    } else {
+      user.role = 'user';
+    }
+
     // Update last login
     user.lastLogin = Date.now();
     await user.save();

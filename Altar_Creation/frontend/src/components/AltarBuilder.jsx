@@ -4,7 +4,25 @@ import DesignManager from './DesignManager';
 import designService from '../services/designService';
 import ShareModal from './ShareModal';
 
-export default function AltarBuilder({ user, onLogout }) {
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import ItemPalette from './ItemPalette';
+import DesignManager from './DesignManager';
+import designService from '../services/designService';
+import ShareModal from './ShareModal';
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import AdminDashboard from './AdminDashboard';
+import ItemPalette from './ItemPalette';
+import DesignManager from './DesignManager';
+import designService from '../services/designService';
+import ShareModal from './ShareModal';
+
+export default function AltarBuilder({ onLogout }) {
+  const { user, logout } = useAuth();
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
   const [altarName, setAltarName] = useState('');
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [items, setItems] = useState([]);
@@ -630,6 +648,7 @@ export default function AltarBuilder({ user, onLogout }) {
 
   // Remove old renderFrame and frameShape logic
 
+  /*
   // New renderDeceasedPhotoWithFrame function
   const renderDeceasedPhotoWithFrame = () => {
     if (!deceasedPhoto) return null;
@@ -682,6 +701,7 @@ export default function AltarBuilder({ user, onLogout }) {
         </div>
     );
   };
+  */
 
   // Add effect to load sharing settings when share modal opens
   useEffect(() => {
@@ -842,33 +862,46 @@ export default function AltarBuilder({ user, onLogout }) {
           </div>
         </div>
 
-        {/* Right side - User info and logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexShrink: 0, marginLeft: 'auto' }}>
-          {user && (
-            <span style={{ color: '#5a4a2c', fontSize: 14, whiteSpace: 'nowrap' }}>
-              Welcome, {user.firstName || user.username}
+      {/* Right side - User info and logout */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexShrink: 0, marginLeft: 'auto', position: 'relative' }}>
+        {user && (
+          <>
+            <span style={{ color: '#5a4a2c', fontSize: 14, whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setProfileDropdownOpen(prev => !prev)}>
+              Welcome, {user.firstName || user.username} ▼
             </span>
-          )}
-          <button
-            onClick={onLogout}
-            style={{
-              background: '#f44336',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 16px',
-              cursor: 'pointer',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              marginLeft: 8,
-              marginRight: 8, // Added right margin
-            }}
-          >
-            Logout
-          </button>
-        </div>
+            {profileDropdownOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                background: '#fff',
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                zIndex: 1000,
+                minWidth: 150,
+                padding: 8,
+              }}>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    padding: '8px 12px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    color: '#333',
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
       </div>
       {/* Main layout: palette/sidebar on the left, builder/canvas on the right */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
