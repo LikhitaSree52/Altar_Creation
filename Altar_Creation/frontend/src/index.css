@@ -1,10 +1,60 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
+@import './welcome-theme.css';
+
+:root {
+  --font-heading: 'Sacramento', cursive, Arial, Helvetica, sans-serif;
+  --font-body: Arial, Helvetica, sans-serif;
+}
+
+body, html {
+  font-family: var(--font-body);
+  font-style: italic;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body, html {
+  font-style: italic;
+}
+
+h1, h2, h3, h4, h5, h6, .heading {
+  font-family: var(--font-heading);
+  font-style: normal;
+  font-weight: bold;
+  letter-spacing: 0.01em;
+}
+
+.button, button, .animated-btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+}
+
+.light {
+  --primary-bg: #ffffff;
+  --primary-text: #1e293b;
+  --surface-bg: #f8fafc;
+  --surface-hover: #f1f5f9;
+  --modal-bg: rgba(255,255,255,0.95);
+  --modal-text: #1e293b;
+}
+
+.dark {
+  --primary-bg: #0f172a;
+  --primary-text: #f8fafc;
+  --surface-bg: #1e293b;
+  --surface-hover: #334155;
+  --modal-bg: rgba(15,23,42,0.98);
+  --modal-text: #f8fafc;
+}
+
+body {
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  transition: background 0.3s, color 0.3s;
 }
 
 code {

@@ -13,9 +13,7 @@ export default function AltarBuilder({ user, onLogout }) {
   // Remove old frameShape state
   // Add new state for deceased photo and frame style
   const [deceasedPhotos, setDeceasedPhotos] = useState([]); // Array of {src, pos, dimensions}
-  const [frameStyle, setFrameStyle] = useState('classic'); // classic, ornate, modern
-  const [showPalette, setShowPalette] = useState(true);
-  const [frameImage, setFrameImage] = useState(null);
+  const [frameStyle, setFrameStyle] = useState('classic'); 
   const [wallBgColor, setWallBgColor] = useState('#f5f3ef');
   const [wallBgImage, setWallBgImage] = useState(null);
   // Add state for deceased photo position
@@ -47,20 +45,13 @@ export default function AltarBuilder({ user, onLogout }) {
   // Add state to track which deceased photo is being resized and hovered
   const [resizingDeceased, setResizingDeceased] = useState({ idx: null, handle: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
   const [hoveredDeceased, setHoveredDeceased] = useState(null);
+  const [deceasedPhoto, setDeceasedPhoto] = useState(null); // Add missing state
 
   // Remove share modal state except showShareModal
   const [showShareModal, setShowShareModal] = useState(false);
 
   // Add state for sidebar visibility
   const [sidebarVisible, setSidebarVisible] = useState(true);
-
-  const handleFrameImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setFrameImage(ev.target.result);
-    reader.readAsDataURL(file);
-  };
 
   const handleWallBgImageUpload = (e) => {
     const file = e.target.files[0];
@@ -1123,33 +1114,125 @@ export default function AltarBuilder({ user, onLogout }) {
                 onMouseEnter={() => setHoveredDeceased(idx)}
                 onMouseLeave={() => setHoveredDeceased(null)}
               >
-                <img src={photo.src} alt={`Deceased ${idx+1}`} style={{
-                  width: '90%',
-                  height: '90%',
-                  objectFit: 'cover',
-                  borderRadius: photo.frameStyle === 'classic' ? '18px' : photo.frameStyle === 'ornate' ? '50%/40%' : '50%',
-                  boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
-                }} />
+                <img 
+                  src={photo.src} 
+                  alt={`Deceased ${idx+1}`} 
+                  style={{
+                    width: '90%',
+                    height: '90%',
+                    objectFit: 'cover',
+                    borderRadius: photo.frameStyle === 'classic' ? '18px' : photo.frameStyle === 'ornate' ? '50%/40%' : '50%',
+                    boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
+                  }} 
+                />
                 
                 {/* Resize handles - only show on hover */}
                 {hoveredDeceased === idx && (
                   <>
                     {/* NW */}
-                    <div style={{ position: 'absolute', top: -8, left: -8, width: 16, height: 16, cursor: 'nw-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'nw')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        top: -8, 
+                        left: -8, 
+                        width: 16, 
+                        height: 16, 
+                        cursor: 'nw-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'nw')} 
+                    />
                     {/* NE */}
-                    <div style={{ position: 'absolute', top: -8, right: -8, width: 16, height: 16, cursor: 'ne-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'ne')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        top: -8, 
+                        right: -8, 
+                        width: 16, 
+                        height: 16, 
+                        cursor: 'ne-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'ne')} 
+                    />
                     {/* SW */}
-                    <div style={{ position: 'absolute', bottom: -8, left: -8, width: 16, height: 16, cursor: 'sw-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'sw')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        bottom: -8, 
+                        left: -8, 
+                        width: 16, 
+                        height: 16, 
+                        cursor: 'sw-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'sw')} 
+                    />
                     {/* SE */}
-                    <div style={{ position: 'absolute', bottom: -8, right: -8, width: 16, height: 16, cursor: 'se-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'se')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        bottom: -8, 
+                        right: -8, 
+                        width: 16, 
+                        height: 16, 
+                        cursor: 'se-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'se')} 
+                    />
                     {/* E */}
-                    <div style={{ position: 'absolute', right: -6, top: 0, bottom: 0, width: 12, cursor: 'e-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'e')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        right: -6, 
+                        top: 0, 
+                        bottom: 0, 
+                        width: 12, 
+                        cursor: 'e-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'e')} 
+                    />
                     {/* W */}
-                    <div style={{ position: 'absolute', left: -6, top: 0, bottom: 0, width: 12, cursor: 'w-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'w')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        left: -6, 
+                        top: 0, 
+                        bottom: 0, 
+                        width: 12, 
+                        cursor: 'w-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'w')} 
+                    />
                     {/* N */}
-                    <div style={{ position: 'absolute', top: -6, left: 0, right: 0, height: 12, cursor: 'n-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'n')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        top: -6, 
+                        left: 0, 
+                        right: 0, 
+                        height: 12, 
+                        cursor: 'n-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'n')} 
+                    />
                     {/* S */}
-                    <div style={{ position: 'absolute', bottom: -6, left: 0, right: 0, height: 12, cursor: 's-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 's')} />
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        bottom: -6, 
+                        left: 0, 
+                        right: 0, 
+                        height: 12, 
+                        cursor: 's-resize', 
+                        zIndex: 10 
+                      }} 
+                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 's')} 
+                    />
                   </>
                 )}
               </div>

@@ -18,14 +18,10 @@ export default function ItemPalette({ onDragStart, customItems = [], onCustomSti
     const file = e.target.files[0];
     if (!file) return;
     
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const newSticker = { label: file.name, img: ev.target.result };
-      if (onCustomStickerUpload) {
-        onCustomStickerUpload(newSticker);
-      }
-    };
-    reader.readAsDataURL(file);
+    // Pass the raw file object up to the parent component
+    if (onCustomStickerUpload) {
+      onCustomStickerUpload(file);
+    }
   };
 
   return (

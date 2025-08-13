@@ -8,6 +8,7 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+
 };
 
 export const AuthProvider = ({ children }) => {
@@ -36,11 +37,13 @@ export const AuthProvider = ({ children }) => {
             // Token is invalid, remove it
             localStorage.removeItem('token');
             setToken(null);
+            setUser(null);
           }
         } catch (error) {
           console.error('Auth check error:', error);
           localStorage.removeItem('token');
           setToken(null);
+          setUser(null);
         }
       }
       setLoading(false);
@@ -142,6 +145,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+  };
+
+  // Force logout (for use in components on 401/403)
+  const forceLogout = () => {
+    logout();
   };
 
   // Update user profile

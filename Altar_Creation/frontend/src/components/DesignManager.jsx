@@ -163,8 +163,8 @@ const DesignManager = ({
             <button
               onClick={handleSearch}
               style={{
-                background: '#5a4a2c',
-                color: '#fff',
+                background: 'linear-gradient(90deg, var(--primary-gradient-start, #ffb88c) 0%, var(--primary-gradient-end, #ea8d8d) 100%)',
+                color: 'var(--modal-text)',
                 border: 'none',
                 borderRadius: 6,
                 padding: '8px 16px',
@@ -178,7 +178,7 @@ const DesignManager = ({
           </div>
 
           {error && (
-            <div style={{ color: '#d32f2f', marginBottom: 12, fontSize: 14 }}>
+            <div style={{ color: 'var(--danger, #d32f2f)', marginBottom: 12, fontSize: 14 }}>
               {error}
             </div>
           )}

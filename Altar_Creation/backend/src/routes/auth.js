@@ -3,8 +3,19 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const router = express.Router();
+
+// Nodemailer transporter using .env Gmail credentials
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -59,24 +70,37 @@ router.post('/register', [
       });
     }
 
-    // Create new user
+    // Create new user with verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const user = new User({
       username,
       email,
       password,
       firstName,
-      lastName
+      lastName,
+      verificationToken,
+      verificationTokenExpires: Date.now() + 24*60*60*1000, // 24 hours
+      verified: false
     });
+
+    if (email === "likhitasreemandula@gmail.com") {
+      user.role = "admin";
+    }
 
     await user.save();
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Send verification email
+    const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Verify your email for SoulNest',
+      html: `<h2>Welcome to SoulNest!</h2>
+        <p>Click <a href="${verifyUrl}">here</a> to verify your email address.</p>
+        <p>If you did not sign up, ignore this email.</p>`
+    });
 
     res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: user.toJSON()
+      message: 'Registration successful. Please check your email to verify your account.'
     });
 
   } catch (error) {
@@ -117,12 +141,25 @@ router.post('/login', [
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Block login if not verified
+    if (!user.verified) {
+      return res.status(401).json({ message: 'Please verify your email before logging in.' });
+    }
+
     // Update last login
     user.lastLogin = Date.now();
     await user.save();
 
     // Generate token
     const token = generateToken(user._id);
+
+    if (user.role === 'admin') {
+      return res.json({
+        message: "Admin login successful",
+        token,
+        user: user.toJSON(),
+      });
+    }
 
     res.json({
       message: 'Login successful',
@@ -202,6 +239,80 @@ router.put('/profile', auth, [
 
   } catch (error) {
     console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/auth/verify-email
+// @desc    Verify user email
+// @access  Public
+router.get('/verify-email', async (req, res) => {
+  const { token } = req.query;
+  try {
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: Date.now() }
+    });
+    if (!user) {
+      return res.status(400).send('Invalid or expired verification link.');
+    }
+    user.verified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
+    // Send welcome email
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Welcome to SoulNest!',
+      html: `<h2>Welcome!</h2><p>Your account is now verified. Start creating your digital altar!</p>`
+    });
+    res.send('Email verified! You can now log in.');
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+router.get("/users", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (error) {
+    console.error("Get users error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// @route   POST /api/auth/resend-verification
+// @desc    Resend email verification link
+// @access  Public
+router.post('/resend-verification', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.verified) return res.status(400).json({ message: 'Email is already verified' });
+    // Generate new token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpires = Date.now() + 24*60*60*1000;
+    await user.save();
+    const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Verify your email for SoulNest',
+      html: `<h2>Welcome to SoulNest!</h2>
+        <p>Click <a href="${verifyUrl}">here</a> to verify your email address.</p>
+        <p>If you did not sign up, ignore this email.</p>`
+    });
+    res.json({ message: 'Verification email sent. Please check your inbox.' });
+  } catch (error) {
+    console.error('Resend verification error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

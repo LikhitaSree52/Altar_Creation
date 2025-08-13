@@ -1,261 +1,215 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 
-const Login = ({ onSwitchToRegister }) => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [errors, setErrors] = useState({});
+const Login = ({ onSwitchToRegister, loginType = 'user', onBack }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-
+    setError('');
     setLoading(true);
-    const result = await login(formData.email, formData.password);
-    setLoading(false);
 
-    if (!result.success) {
-      setErrors({ general: result.error });
+    try {
+      // Your login logic here
+      // You can check loginType to determine if it's an admin login
+      if (loginType === 'admin' && email !== 'likhitasreemandula@gmail.com') {
+        throw new Error('Invalid admin credentials');
+      }
+
+      // Rest of your login logic...
+      
+    } catch (err) {
+      setError(err.message || 'Failed to login');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Welcome Back</h2>
-        <p className="auth-subtitle">Sign in to your account</p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #e2e8f0, #cbd5e1)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        background: 'var(--modal-bg)',
+        color: 'var(--modal-text)',
+        padding: '32px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        width: '100%',
+        maxWidth: '400px',
+        position: 'relative',
+      }}>
+        {loginType === 'admin' && onBack && (
+          <button
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 16,
+              top: 16,
+              background: 'none',
+              border: 'none',
+              color: 'var(--modal-text)',
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 'bold',
+              fontSize: 18,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              zIndex: 2,
+            }}
+          >
+            ← Back
+          </button>
+        )}
+        <h2 style={{ 
+          color: 'var(--modal-text)', 
+          marginBottom: '24px', 
+          textAlign: 'center',
+          fontSize: '32px',
+          fontFamily: 'var(--font-heading)',
+          fontWeight: 'bold',
+          letterSpacing: '0.01em'
+        }}>
+          {loginType === 'admin' ? 'Admin Login' : 'User Login'}
+        </h2>
 
-        {errors.general && (
-          <div className="error-message">
-            {errors.general}
+        {error && (
+          <div style={{
+            background: '#fee2e2',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '14px'
+          }}>
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label 
+              htmlFor="email" 
+              style={{ 
+                display: 'block', 
+                marginBottom: '6px', 
+                color: 'var(--modal-text)',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              Email
+            </label>
             <input
               type="email"
               id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? 'error' : ''}
-              placeholder="Enter your email"
-              disabled={loading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                fontSize: '16px',
+                color: 'var(--modal-text)',
+                background: 'var(--modal-bg)',
+              }}
             />
-            {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div>
+            <label 
+              htmlFor="password" 
+              style={{ 
+                display: 'block', 
+                marginBottom: '6px', 
+                color: 'var(--modal-text)',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              Password
+            </label>
             <input
               type="password"
               id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? 'error' : ''}
-              placeholder="Enter your password"
-              disabled={loading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                fontSize: '16px',
+                color: 'var(--modal-text)',
+                background: 'var(--modal-bg)',
+              }}
             />
-            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
 
-          <button 
-            type="submit" 
-            className="auth-button"
+          <button
+            type="submit"
             disabled={loading}
+            style={{
+              background: loading ? 'linear-gradient(90deg, #ffb88c 0%, #ea8d8d 100%)' : 'linear-gradient(90deg, #ffb88c 0%, #ea8d8d 100%)',
+              color: 'white',
+              padding: '14px 0',
+              border: 'none',
+              borderRadius: '32px',
+              fontSize: '20px',
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 16px rgba(80,60,20,0.12)',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              marginTop: '18px',
+              marginBottom: '4px',
+              letterSpacing: '0.04em',
+              transition: 'background 0.2s, box-shadow 0.2s',
+            }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
+
+          {loginType === 'user' && (
+            <p style={{ 
+              textAlign: 'center', 
+              marginTop: '16px',
+              color: '#475569',
+              fontSize: '14px'
+            }}>
+              Don't have an account?{' '}
+              <button
+                onClick={onSwitchToRegister}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ea8d8d',
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: '17px',
+                  marginLeft: '4px',
+                  textDecoration: 'underline',
+                  transition: 'color 0.18s',
+                }}
+              >
+                Sign up
+              </button>
+            </p>
+          )}
         </form>
-
-        <div className="auth-footer">
-          <p>
-            Don't have an account?{' '}
-            <button 
-              type="button" 
-              className="link-button"
-              onClick={onSwitchToRegister}
-            >
-              Sign up
-            </button>
-          </p>
-        </div>
       </div>
-
-      <style jsx>{`
-        .auth-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          padding: 20px;
-        }
-
-        .auth-card {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-          padding: 40px;
-          width: 100%;
-          max-width: 400px;
-        }
-
-        .auth-card h2 {
-          text-align: center;
-          color: #333;
-          margin-bottom: 8px;
-          font-size: 28px;
-          font-weight: 600;
-        }
-
-        .auth-subtitle {
-          text-align: center;
-          color: #666;
-          margin-bottom: 30px;
-          font-size: 16px;
-        }
-
-        .auth-form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .form-group label {
-          font-weight: 500;
-          color: #333;
-          font-size: 14px;
-        }
-
-        .form-group input {
-          padding: 12px 16px;
-          border: 2px solid #e1e5e9;
-          border-radius: 8px;
-          font-size: 16px;
-          transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus {
-          outline: none;
-          border-color: #667eea;
-        }
-
-        .form-group input.error {
-          border-color: #e74c3c;
-        }
-
-        .error-text {
-          color: #e74c3c;
-          font-size: 12px;
-          margin-top: 4px;
-        }
-
-        .error-message {
-          background: #fee;
-          color: #e74c3c;
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          text-align: center;
-          border: 1px solid #fcc;
-        }
-
-        .auth-button {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          padding: 14px;
-          border-radius: 8px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-          margin-top: 10px;
-        }
-
-        .auth-button:hover:not(:disabled) {
-          transform: translateY(-2px);
-        }
-
-        .auth-button:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        .auth-footer {
-          text-align: center;
-          margin-top: 30px;
-          padding-top: 20px;
-          border-top: 1px solid #e1e5e9;
-        }
-
-        .auth-footer p {
-          color: #666;
-          margin: 0;
-        }
-
-        .link-button {
-          background: none;
-          border: none;
-          color: #667eea;
-          cursor: pointer;
-          font-weight: 600;
-          text-decoration: underline;
-        }
-
-        .link-button:hover {
-          color: #764ba2;
-        }
-      `}</style>
     </div>
   );
 };

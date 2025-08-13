@@ -134,18 +134,20 @@ export default function ShareModal({
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      <div style={{
-        background: '#fff',
-        borderRadius: 12,
-        padding: 32,
-        minWidth: 380,
-        boxShadow: '0 4px 24px rgba(80,60,20,0.10)',
+      <div className="fade-in" style={{
+        background: 'var(--modal-bg)',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px var(--modal-shadow, rgba(31,38,135,0.17))',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255,255,255,0.18)',
+        padding: '32px',
+        maxWidth: '500px',
+        width: '100%',
+        margin: 'auto',
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 18,
-        alignItems: 'stretch',
-        maxWidth: 420,
+        zIndex: 1001,
+        animation: 'modalFadeIn 0.38s cubic-bezier(.4,0,.2,1)'
       }}>
         <button
           onClick={onClose}
@@ -181,6 +183,7 @@ export default function ShareModal({
             onKeyDown={e => { if (e.key === 'Enter') handleAddPerson(); }}
           />
           <button
+            className="animated-btn"
             onClick={handleAddPerson}
             style={{
               background: '#2196f3',
@@ -269,6 +272,7 @@ export default function ShareModal({
               onFocus={e => e.target.select()}
             />
             <button
+              className="animated-btn"
               onClick={() => {
                 navigator.clipboard.writeText(shareLink || 'https://altar-app.com/share/your-link');
               }}
@@ -287,14 +291,17 @@ export default function ShareModal({
           {/* Social share buttons */}
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button
+              className="animated-btn"
               style={{ background: '#25D366', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
               onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareLink || 'https://altar-app.com/share/your-link')}`)}
             >WhatsApp</button>
             <button
+              className="animated-btn"
               style={{ background: '#E1306C', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
               onClick={() => window.open(`https://www.instagram.com/?url=${encodeURIComponent(shareLink || 'https://altar-app.com/share/your-link')}`)}
             >Instagram</button>
             <button
+              className="animated-btn"
               style={{ background: '#4267B2', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
               onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink || 'https://altar-app.com/share/your-link')}`)}
             >Facebook</button>

@@ -1,0 +1,26 @@
+/* Import Google Fonts for headings and body */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --font-heading: 'Montserrat', Arial, Helvetica, sans-serif;
+  --font-body: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+body, html {
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6, .heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.button, button, .animated-btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+}

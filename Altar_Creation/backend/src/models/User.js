@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: 50
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -40,6 +45,16 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
+  },
+  verificationToken: {
+    type: String
+  },
+  verificationTokenExpires: {
+    type: Date
+  },
+  verified: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
