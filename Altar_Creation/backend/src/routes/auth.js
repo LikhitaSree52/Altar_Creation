@@ -317,4 +317,22 @@ router.post('/resend-verification', async (req, res) => {
   }
 });
 
+// @route   GET /api/auth/users
+// @desc    Get all users (admin only)
+// @access  Private/Admin
+router.get('/users', auth, async (req, res) => {
+  try {
+    // Only allow admins to list users
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to access this resource' });
+    }
+    
+    const users = await User.find({}, '-password -verificationToken -verificationTokenExpires');
+    res.json(users);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -4,6 +4,36 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get all users (admin only)
+router.get('/users', auth, isAdmin, async (req, res) => {
+  try {
+    console.log('GET /api/admin/users - Request received');
+    console.log('User making request:', req.user);
+    
+    const users = await User.find({}, '-password');
+    console.log(`Found ${users.length} users`);
+    
+    // Log first user as sample (without sensitive info)
+    if (users.length > 0) {
+      console.log('Sample user:', {
+        _id: users[0]._id,
+        email: users[0].email,
+        role: users[0].role,
+        verified: users[0].verified
+      });
+    }
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Middleware: Must be admin
 function isAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {

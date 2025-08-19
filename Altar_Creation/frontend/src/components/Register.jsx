@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import Modal from './Modal';
 import { useAuth } from '../context/AuthContext';
+import Modal from './Modal';
 
 const Register = ({ onSwitchToLogin }) => {
   const [usernameAvailable, setUsernameAvailable] = useState(null);
@@ -17,13 +17,11 @@ const Register = ({ onSwitchToLogin }) => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [registered, setRegistered] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [registered, setRegistered] = useState(false);
   const [passwordFocus, setPasswordFocus] = useState(false);
   const [confirmFocus, setConfirmFocus] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const { register } = useAuth();
 
   const handleChange = (e) => {

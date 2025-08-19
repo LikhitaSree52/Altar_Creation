@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const LoginModal = ({ isOpen, onClose, onNavigateToRegister }) => {
+const LoginModal = ({ isOpen, onClose, onNavigateToRegister, onLoginSuccess }) => {
   const [view, setView] = useState('options'); // 'options' or 'login'
   const [loginType, setLoginType] = useState('user');
   const [email, setEmail] = useState('');
@@ -10,6 +10,7 @@ const LoginModal = ({ isOpen, onClose, onNavigateToRegister }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -36,16 +37,20 @@ const LoginModal = ({ isOpen, onClose, onNavigateToRegister }) => {
     setLoading(true);
 
     try {
-      if (loginType === 'admin' && email !== 'likhitasreemandula@gmail.com') {
-        throw new Error('Invalid admin credentials');
-      }
       // Use AuthContext login
       const result = await login(email, password);
       if (!result.success) {
         throw new Error(result.error || 'Failed to login');
       }
-      // On success, close modal (AppContent will show AltarBuilder)
-      onClose();
+      
+      // On success, call the success handler
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        // Fallback behavior
+        onClose();
+        navigate('/builder');
+      }
     } catch (err) {
       setError(err.message || 'Failed to login');
     } finally {

@@ -6,9 +6,8 @@ import StatsCards from "./StatsCards";
 import AnalyticsCharts from "./AnalyticsCharts";
 import ActivityFeed from "./ActivityFeed";
 import UserAvatar from "./UserAvatar";
-import ThemeToggle from "./ThemeToggle";
 
-const AdminDashboard = ({ user, onLogout }) => {
+const AdminDashboard = ({ user, onLogout, onBackToBuilder }) => {
   // ...existing state
 
   // Demote admin to user (superadmin only)
@@ -132,23 +131,71 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      console.log('1. Starting to fetch users...');
+      setLoading(true);
+      setError('');
+      
       try {
         const token = localStorage.getItem("token");
+        console.log('2. Token found in localStorage:', token ? 'Yes' : 'No');
+        
         if (!token) {
-          setError("No token found");
+          const errorMsg = 'No authentication token found. Please log in again.';
+          console.error('3. Error:', errorMsg);
+          setError(errorMsg);
           setLoading(false);
           return;
         }
-        const res = await axios.get("/api/auth/users", {
-          headers: { Authorization: `Bearer ${token}` },
+        
+        const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const apiUrl = `${backendUrl}/api/admin/users`;
+        console.log('3. Making API call to:', apiUrl);
+        
+        console.log('4. Request headers:', {
+          'Authorization': `Bearer ${token.substring(0, 15)}...`,
+          'Content-Type': 'application/json'
         });
-        setUsers(res.data);
+        
+        const res = await axios.get(apiUrl, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true
+        });
+        
+        console.log('5. API Response Status:', res.status);
+        console.log('6. Response headers:', res.headers);
+        
+        if (res.data) {
+          console.log('7. Users data received. Count:', Array.isArray(res.data) ? res.data.length : 'Invalid format');
+          console.log('8. First user (if any):', Array.isArray(res.data) && res.data.length > 0 ? res.data[0] : 'No users');
+          
+          const users = Array.isArray(res.data) ? res.data : [];
+          setUsers(users);
+          setError('');
+          
+          if (users.length === 0) {
+            console.warn('9. Warning: No users found in the database.');
+          }
+        } else {
+          const errorMsg = 'Unexpected response format from server';
+          console.error('7. Error:', errorMsg, res);
+          setError(errorMsg);
+        }
       } catch (err) {
-        setError("Failed to fetch users");
+        console.error('Error fetching users:', err);
+        setError(`Failed to fetch users: ${err.message}`);
+        if (err.response) {
+          console.error('Error response data:', err.response.data);
+          console.error('Error status:', err.response.status);
+          console.error('Error headers:', err.response.headers);
+        }
       } finally {
         setLoading(false);
       }
     };
+    
     fetchUsers();
   }, []);
 
@@ -209,17 +256,102 @@ const AdminDashboard = ({ user, onLogout }) => {
     return 0;
   });
 
-  // Tab state for segregation
+  // Tab state for segregation - default to 'users' tab
   const [tab, setTab] = useState('users');
+
+  // Force show users tab if somehow it's not set
+  useEffect(() => {
+    if (!['users', 'analytics', 'activity'].includes(tab)) {
+      setTab('users');
+    }
+  }, [tab]);
 
   return (
     <div className="admin-dashboard fade-in">
-      <header className="dashboard-header">
-        <h1>Admin Dashboard</h1>
-        <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span>Welcome, {user.firstName || user.username}</span>
-          <ThemeToggle style={{ marginRight: 8 }} />
-          <button onClick={onLogout}>Logout</button>
+      <header className="dashboard-header" style={{
+        padding: '20px',
+        background: 'var(--header-bg, rgba(255, 255, 255, 0.02))',
+        borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%'
+        }}>
+          <h1 style={{ 
+            margin: 0, 
+            color: 'var(--text-color, #333)',
+            fontSize: '1.8rem',
+            fontWeight: '600',
+            letterSpacing: '-0.5px',
+            marginRight: 'auto' // Pushes everything after this to the right
+          }}>
+            Admin Dashboard
+          </h1>
+          
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            alignItems: 'center',
+            marginLeft: 'auto' // Ensures this container stays on the right
+          }}>
+            <button
+              onClick={onBackToBuilder}
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                color: 'var(--text-color, #333)',
+                border: '1px solid var(--border-color, #ddd)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap',
+                ':hover': {
+                  background: 'var(--hover-bg, rgba(0, 0, 0, 0.05)',
+                },
+              }}
+            >
+              <span className="material-icons" style={{ fontSize: '18px' }}>arrow_back</span>
+              Back to Builder
+            </button>
+            <div style={{ 
+              width: '1px', 
+              height: '24px', 
+              background: 'var(--border-color, rgba(0, 0, 0, 0.1))',
+              margin: '0 8px'
+            }} />
+            <button
+              onClick={onLogout}
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                color: 'var(--danger-color, #dc3545)',
+                border: '1px solid var(--danger-color, #dc3545)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap',
+                ':hover': {
+                  background: 'var(--danger-color, #dc3545)',
+                  color: 'white',
+                  opacity: 0.9,
+                },
+              }}
+            >
+              <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
+              Logout
+            </button>
+          </div>
         </div>
       </header>
       <main className="dashboard-main glass-card">

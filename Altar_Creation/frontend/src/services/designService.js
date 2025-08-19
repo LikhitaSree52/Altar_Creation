@@ -230,4 +230,6 @@ class DesignService {
   }
 }
 
-export default new DesignService(); 
+const designService = new DesignService();
+
+export default designService; 

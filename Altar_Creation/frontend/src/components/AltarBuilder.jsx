@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ItemPalette from './ItemPalette';
 import DesignManager from './DesignManager';
 import designService from '../services/designService';
 import ShareModal from './ShareModal';
 
 export default function AltarBuilder({ user, onLogout }) {
+  const navigate = useNavigate();
   const [altarName, setAltarName] = useState('');
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [items, setItems] = useState([]);
@@ -13,7 +15,9 @@ export default function AltarBuilder({ user, onLogout }) {
   // Remove old frameShape state
   // Add new state for deceased photo and frame style
   const [deceasedPhotos, setDeceasedPhotos] = useState([]); // Array of {src, pos, dimensions}
-  const [frameStyle, setFrameStyle] = useState('classic'); 
+  const [frameStyle, setFrameStyle] = useState('classic'); // classic, ornate, modern
+  const [showPalette, setShowPalette] = useState(true);
+  const [frameImage, setFrameImage] = useState(null);
   const [wallBgColor, setWallBgColor] = useState('#f5f3ef');
   const [wallBgImage, setWallBgImage] = useState(null);
   // Add state for deceased photo position
@@ -45,13 +49,20 @@ export default function AltarBuilder({ user, onLogout }) {
   // Add state to track which deceased photo is being resized and hovered
   const [resizingDeceased, setResizingDeceased] = useState({ idx: null, handle: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
   const [hoveredDeceased, setHoveredDeceased] = useState(null);
-  const [deceasedPhoto, setDeceasedPhoto] = useState(null); // Add missing state
 
   // Remove share modal state except showShareModal
   const [showShareModal, setShowShareModal] = useState(false);
 
   // Add state for sidebar visibility
   const [sidebarVisible, setSidebarVisible] = useState(true);
+
+  const handleFrameImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setFrameImage(ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleWallBgImageUpload = (e) => {
     const file = e.target.files[0];
@@ -623,7 +634,10 @@ export default function AltarBuilder({ user, onLogout }) {
 
   // New renderDeceasedPhotoWithFrame function
   const renderDeceasedPhotoWithFrame = () => {
-    if (!deceasedPhoto) return null;
+    if (!deceasedPhotos || !deceasedPhotos.length) return null;
+    const currentPhoto = deceasedPhotos[0]; // Get the first photo for now
+    if (!currentPhoto?.src) return null;
+    
     // Frame style presets
     let frameBorder, frameBg, frameRadius, frameImgOverlay = null;
     if (frameStyle === 'classic') {
@@ -657,23 +671,27 @@ export default function AltarBuilder({ user, onLogout }) {
         borderRadius: frameRadius,
           boxShadow: '0 4px 24px rgba(80,60,20,0.10)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
         zIndex: 5,
       }}>
-        <img src={deceasedPhoto} alt="Deceased" style={{
-          width: '90%',
-          height: '90%',
-          objectFit: 'cover',
-          borderRadius: frameRadius,
-          boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
-        }} />
+        <img 
+          src={currentPhoto.src} 
+          alt="Deceased" 
+          style={{
+            width: '90%',
+            height: '90%',
+            objectFit: 'cover',
+            borderRadius: frameRadius,
+            boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
+          }}
+          onError={(e) => {
+            console.error('Error loading image:', currentPhoto.src);
+            e.target.style.display = 'none';
+          }}
+        />
         {frameImgOverlay}
-        </div>
+      </div>
     );
   };
-
   // Add effect to load sharing settings when share modal opens
   useEffect(() => {
     const fetchSharingSettings = async () => {
@@ -833,12 +851,40 @@ export default function AltarBuilder({ user, onLogout }) {
           </div>
         </div>
 
-        {/* Right side - User info and logout */}
+        {/* Right side - User info and actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexShrink: 0, marginLeft: 'auto' }}>
           {user && (
-            <span style={{ color: '#5a4a2c', fontSize: 14, whiteSpace: 'nowrap' }}>
-              Welcome, {user.firstName || user.username}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #e0ddd7',
+                    borderRadius: 20,
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    color: '#5a4a2c',
+                    fontWeight: 500,
+                    fontSize: 13,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    ':hover': {
+                      background: 'rgba(0,0,0,0.03)',
+                      transform: 'translateY(-1px)'
+                    }
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>admin_panel_settings</span>
+                  Admin Dashboard
+                </button>
+              )}
+              <span style={{ color: '#5a4a2c', fontSize: 14, whiteSpace: 'nowrap' }}>
+                Welcome, {user.firstName || user.username}
+              </span>
+            </div>
           )}
           <button
             onClick={onLogout}
@@ -898,7 +944,7 @@ export default function AltarBuilder({ user, onLogout }) {
               }}
               title="Hide Sidebar"
             >
-              ← Hide
+              Hide
             </button>
             <div style={{ height: 32 }} /> {/* Spacer for button */}
             <div style={{ fontWeight: 600, color: '#5a4a2c', marginBottom: 8 }}>
@@ -995,7 +1041,7 @@ export default function AltarBuilder({ user, onLogout }) {
                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                   }}
                   title="Delete photo"
-                >×</button>
+                >├ù</button>
                 <select
                   value={photo.frameStyle || 'classic'}
                   onChange={e => setDeceasedPhotos(prev => prev.map((p, i) => i === idx ? { ...p, frameStyle: e.target.value } : p))}
@@ -1050,7 +1096,7 @@ export default function AltarBuilder({ user, onLogout }) {
               }}
               title="Show Sidebar"
             >
-              Show Sidebar →
+              Show Sidebar
             </button>
           </div>
         )}
@@ -1114,125 +1160,33 @@ export default function AltarBuilder({ user, onLogout }) {
                 onMouseEnter={() => setHoveredDeceased(idx)}
                 onMouseLeave={() => setHoveredDeceased(null)}
               >
-                <img 
-                  src={photo.src} 
-                  alt={`Deceased ${idx+1}`} 
-                  style={{
-                    width: '90%',
-                    height: '90%',
-                    objectFit: 'cover',
-                    borderRadius: photo.frameStyle === 'classic' ? '18px' : photo.frameStyle === 'ornate' ? '50%/40%' : '50%',
-                    boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
-                  }} 
-                />
+                <img src={photo.src} alt={`Deceased ${idx+1}`} style={{
+                  width: '90%',
+                  height: '90%',
+                  objectFit: 'cover',
+                  borderRadius: photo.frameStyle === 'classic' ? '18px' : photo.frameStyle === 'ornate' ? '50%/40%' : '50%',
+                  boxShadow: '0 2px 8px rgba(80,60,20,0.10)'
+                }} />
                 
                 {/* Resize handles - only show on hover */}
                 {hoveredDeceased === idx && (
                   <>
                     {/* NW */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        top: -8, 
-                        left: -8, 
-                        width: 16, 
-                        height: 16, 
-                        cursor: 'nw-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'nw')} 
-                    />
+                    <div style={{ position: 'absolute', top: -8, left: -8, width: 16, height: 16, cursor: 'nw-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'nw')} />
                     {/* NE */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        top: -8, 
-                        right: -8, 
-                        width: 16, 
-                        height: 16, 
-                        cursor: 'ne-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'ne')} 
-                    />
+                    <div style={{ position: 'absolute', top: -8, right: -8, width: 16, height: 16, cursor: 'ne-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'ne')} />
                     {/* SW */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        bottom: -8, 
-                        left: -8, 
-                        width: 16, 
-                        height: 16, 
-                        cursor: 'sw-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'sw')} 
-                    />
+                    <div style={{ position: 'absolute', bottom: -8, left: -8, width: 16, height: 16, cursor: 'sw-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'sw')} />
                     {/* SE */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        bottom: -8, 
-                        right: -8, 
-                        width: 16, 
-                        height: 16, 
-                        cursor: 'se-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'se')} 
-                    />
+                    <div style={{ position: 'absolute', bottom: -8, right: -8, width: 16, height: 16, cursor: 'se-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'se')} />
                     {/* E */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        right: -6, 
-                        top: 0, 
-                        bottom: 0, 
-                        width: 12, 
-                        cursor: 'e-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'e')} 
-                    />
+                    <div style={{ position: 'absolute', right: -6, top: 0, bottom: 0, width: 12, cursor: 'e-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'e')} />
                     {/* W */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        left: -6, 
-                        top: 0, 
-                        bottom: 0, 
-                        width: 12, 
-                        cursor: 'w-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'w')} 
-                    />
+                    <div style={{ position: 'absolute', left: -6, top: 0, bottom: 0, width: 12, cursor: 'w-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'w')} />
                     {/* N */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        top: -6, 
-                        left: 0, 
-                        right: 0, 
-                        height: 12, 
-                        cursor: 'n-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 'n')} 
-                    />
+                    <div style={{ position: 'absolute', top: -6, left: 0, right: 0, height: 12, cursor: 'n-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 'n')} />
                     {/* S */}
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        bottom: -6, 
-                        left: 0, 
-                        right: 0, 
-                        height: 12, 
-                        cursor: 's-resize', 
-                        zIndex: 10 
-                      }} 
-                      onMouseDown={e => handleDeceasedResizeStart(e, idx, 's')} 
-                    />
+                    <div style={{ position: 'absolute', bottom: -6, left: 0, right: 0, height: 12, cursor: 's-resize', zIndex: 10 }} onMouseDown={e => handleDeceasedResizeStart(e, idx, 's')} />
                   </>
                 )}
               </div>
@@ -1298,7 +1252,7 @@ export default function AltarBuilder({ user, onLogout }) {
                         }}
                         title="Delete item"
                       >
-                        ×
+                        ├ù
                       </button>
                     )}
                     

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import designService from '../services/designService';
 
 export default function ShareModal({
@@ -6,7 +6,6 @@ export default function ShareModal({
   onClose,
   currentDesign,
 }) {
-  const [shareRole, setShareRole] = useState('viewer');
   const [shareLink, setShareLink] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareError, setShareError] = useState('');

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import useSound from 'use-sound';
 
 const AMBIENT_TRACKS = [

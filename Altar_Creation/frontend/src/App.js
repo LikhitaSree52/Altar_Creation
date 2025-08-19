@@ -1,32 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './styles/animations.css';
 import './styles/fonts.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import WelcomePage from './components/WelcomePage';
 import AltarBuilder from './components/AltarBuilder';
 import Register from './components/Register';
 import AdminDashboard from './components/AdminDashboard';
+import UserDashboard from './components/UserDashboard';
 import VerifyEmail from './components/VerifyEmail';
+import LoginModal from './components/LoginModal';
 
 const AppContent = () => {
   const { user, loading, logout } = useAuth();
   const { theme } = useTheme();
-  const [view, setView] = useState('welcome'); // 'welcome', 'register'
+  const navigate = useNavigate();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    setView('welcome');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
-  const handleLogin = (type) => {
-    // Login is now handled by the LoginModal component
-    // This function might be used for other login-related functionality
+  const handleLogin = () => {
+    setShowLoginModal(true);
   };
 
-  const handleNavigateToRegister = () => {
-    setView('register');
+  const handleCloseLogin = () => {
+    setShowLoginModal(false);
+  };
+
+  const handleRegister = () => {
+    navigate('/register');
+  };
+  
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    navigate('/builder');
   };
 
   if (loading) {
@@ -69,33 +80,123 @@ const AppContent = () => {
     );
   }
 
-  // Always show WelcomePage as entry point
-  // Use routes for navigation to admin dashboard, altar builder, etc.
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: theme.colors.background,
+        color: theme.colors.text
+      }}>
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
   return (
-    <Routes>
-      <Route path="/" element={<WelcomePage onLogin={handleLogin} onRegister={handleNavigateToRegister} />} />
-      <Route path="/register" element={<Register onBack={() => { window.location.href = '/'; }} />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/builder" element={user ? <AltarBuilder user={user} onLogout={handleLogout} /> : <WelcomePage onLogin={handleLogin} onRegister={handleNavigateToRegister} />} />
-      <Route path="/admin" element={user && user.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <WelcomePage onLogin={handleLogin} onRegister={handleNavigateToRegister} />} />
-      {/* fallback */}
-      <Route path="*" element={<WelcomePage onLogin={handleLogin} onRegister={handleNavigateToRegister} />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <WelcomePage 
+              onLogin={handleLogin} 
+              onRegister={handleRegister} 
+              user={user}
+            />
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Register onBack={() => navigate('/')} />
+            )
+          } 
+        />
+        <Route 
+          path="/verify-email" 
+          element={
+            user?.emailVerified ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <VerifyEmail />
+            )
+          } 
+        />
+        <Route 
+          path="/dashboard" 
+          element={
+            user ? (
+              <UserDashboard 
+                user={user} 
+                onLogout={handleLogout}
+              />
+            ) : (
+              <Navigate to="/" state={{ from: '/dashboard' }} replace />
+            )
+          } 
+        />
+        <Route 
+          path="/builder" 
+          element={
+            user ? (
+              <AltarBuilder 
+                user={user} 
+                onLogout={handleLogout} 
+                adminMode={user?.role === 'admin'}
+              />
+            ) : (
+              <Navigate to="/" state={{ from: '/builder' }} replace />
+            )
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            user?.role === 'admin' ? (
+              <AdminDashboard 
+                user={user} 
+                onLogout={handleLogout} 
+                onBackToBuilder={() => navigate('/builder')}
+              />
+            ) : (
+              <Navigate to="/" state={{ from: '/admin' }} replace />
+            )
+          } 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      
+      {showLoginModal && (
+        <LoginModal 
+          isOpen={showLoginModal}
+          onClose={handleCloseLogin}
+          onNavigateToRegister={() => {
+            handleCloseLogin();
+            handleRegister();
+          }}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      )}
+    </>
   );
 };
 
 const App = () => {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/*" element={<AppContent />} />
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
   );
 };
 
